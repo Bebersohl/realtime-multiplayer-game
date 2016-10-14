@@ -1,16 +1,13 @@
 "use strict"
 
-const socket = io();
-
-socket.on('connection', function(){
-  console.log(socket.id);
-});
+import threex from './keyboard';
+import pixi from 'pixi.js';
 
 var fpsInterval, lastDrawTime, frameCount, lastSampleTime;
 var intervalID, requestID, then;
 var DELTA = .033;
 //Create the renderer
-const renderer = PIXI.autoDetectRenderer(256, 256, {
+const renderer = pixi.autoDetectRenderer(window.innerWidth, window.innerHeight, {
   //options
   antialias: true,
   autoResize: true,
@@ -21,19 +18,18 @@ renderer.backgroundColor = 0x061639;
 renderer.view.style.position = "absolute";
 renderer.view.style.display = "block";
 renderer.autoResize = true;
-renderer.resize(window.innerWidth, window.innerHeight);
-var keyboard = new THREEx.KeyboardState(renderer.domElement);
+var keyboard = new threex.KeyboardState(renderer.domElement);
   //Create a container object called the `stage`
-const stage = new PIXI.Container();
+const stage = new pixi.Container();
 var sprite;
 
-PIXI.loader
+pixi.loader
   .add("img/explorer.png")
   .load(setup);
 
 function setup() {
-  sprite = new PIXI.Sprite(
-    PIXI.loader.resources["img/explorer.png"].texture
+  sprite = new pixi.Sprite(
+    pixi.loader.resources["img/explorer.png"].texture
   );
   sprite.vx = 0;
   sprite.vy = 0;

@@ -161,3 +161,5 @@ THREEx.KeyboardState.prototype.eventMatches = function(event, keyDesc) {
   }
   return true;
 }
+
+export default THREEx;
