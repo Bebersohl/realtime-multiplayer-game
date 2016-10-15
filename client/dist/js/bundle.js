@@ -46,15 +46,37 @@
 
 	'use strict';
 
+	var _generateRenderer = __webpack_require__(52);
+
+	var _generateRenderer2 = _interopRequireDefault(_generateRenderer);
+
 	__webpack_require__(1);
 
 	__webpack_require__(49);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	//config variables
+
+
+	document.addEventListener("DOMContentLoaded", function (event) {
+	  //Add the canvas to the HTML document
+	  document.body.appendChild(_generateRenderer2.default.view);
+	});
+
+	window.onresize = function (event) {
+	  _generateRenderer2.default.resize(window.innerWidth, window.innerHeight);
+	};
 
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 
 	var _socket = __webpack_require__(2);
 
@@ -64,9 +86,7 @@
 
 	var socket = (0, _socket2.default)();
 
-	socket.on('connection', function () {
-	  console.log(socket.id);
-	});
+	exports.default = socket;
 
 /***/ },
 /* 2 */
@@ -7532,52 +7552,83 @@
 
 	var _pixi2 = _interopRequireDefault(_pixi);
 
+	var _generateRenderer = __webpack_require__(52);
+
+	var _generateRenderer2 = _interopRequireDefault(_generateRenderer);
+
+	var _io = __webpack_require__(1);
+
+	var _io2 = _interopRequireDefault(_io);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var fpsInterval, lastDrawTime, frameCount, lastSampleTime;
-	var intervalID, requestID, then;
-	var DELTA = .033;
-	//Create the renderer
-	var renderer = _pixi2.default.autoDetectRenderer(window.innerWidth, window.innerHeight, {
-	  //options
-	  antialias: true,
-	  autoResize: true,
-	  resolution: 2
-	});
-
-	renderer.backgroundColor = 0x061639;
-	renderer.view.style.position = "absolute";
-	renderer.view.style.display = "block";
-	renderer.autoResize = true;
-	var keyboard = new _keyboard2.default.KeyboardState(renderer.domElement);
+	var sprites = [];
 	//Create a container object called the `stage`
 	var stage = new _pixi2.default.Container();
-	var sprite;
-
 	_pixi2.default.loader.add("img/explorer.png").load(setup);
+	_io2.default.on('new player', function (packet) {
+	  generateExplorer(packet.id);
+	  console.log(packet.id);
+	});
+	_io2.default.on('player left', function (packet) {
+	  for (var i = 0; i < sprites.length; i++) {
+	    if (sprites[i].id === packet.id) {
+	      stage.removeChild(sprites[i]);
+	      sprites.splice(i, 1);
+	    }
+	  }
+	});
+	_io2.default.on('update', function (packet) {
+	  var _loop = function _loop(i) {
+	    //if sprites doesnt have id -> add it
+	    var player = packet.players[i];
 
+	    var doesContain = sprites.find(function (sprite) {
+	      return sprite.id === player.id;
+	    });
+	    if (!doesContain) {
+	      generateExplorer(player.id);
+	    } else {
+	      //update position
+	      doesContain.x = player.x;
+	      doesContain.y = player.y;
+	    }
+	  };
+
+	  for (var i = 0; i < packet.players.length; i++) {
+	    _loop(i);
+	  }
+	});
+	function generateExplorer(socketID) {
+	  sprites.push(new _pixi2.default.Sprite(_pixi2.default.loader.resources["img/explorer.png"].texture));
+	  sprites[sprites.length - 1].vx = 0;
+	  sprites[sprites.length - 1].vy = 0;
+	  sprites[sprites.length - 1].x = 100;
+	  sprites[sprites.length - 1].y = 100;
+	  sprites[sprites.length - 1].id = socketID;
+	  //Add the cat to the stage
+	  stage.addChild(sprites[sprites.length - 1]);
+	}
 	function setup() {
-	  sprite = new _pixi2.default.Sprite(_pixi2.default.loader.resources["img/explorer.png"].texture);
-	  sprite.vx = 0;
-	  sprite.vy = 0;
-	  sprite.x = window.innerWidth / 2;
-	  sprite.y = window.innerHeight / 2;
-
+	  var player_speed = 100;
+	  generateExplorer(_io2.default.id);
+	  console.log(sprites[0].id);
+	  var keyboard = new _keyboard2.default.KeyboardState(_generateRenderer2.default.domElement);
 	  keyboard.domElement.addEventListener('keydown', function (event) {
 	    if (event.repeat) {
 	      return;
 	    }
 	    if (keyboard.eventMatches(event, 'A') || keyboard.eventMatches(event, 'left')) {
-	      sprite.vx -= 100 * DELTA;
+	      sprites[0].vx -= player_speed * DELTA;
 	    }
 	    if (keyboard.eventMatches(event, 'D') || keyboard.eventMatches(event, 'right')) {
-	      sprite.vx += 100 * DELTA;
+	      sprites[0].vx += player_speed * DELTA;
 	    }
 	    if (keyboard.eventMatches(event, 'W') || keyboard.eventMatches(event, 'up')) {
-	      sprite.vy -= 100 * DELTA;
+	      sprites[0].vy -= player_speed * DELTA;
 	    }
 	    if (keyboard.eventMatches(event, 'S') || keyboard.eventMatches(event, 'down')) {
-	      sprite.vy += 100 * DELTA;
+	      sprites[0].vy += player_speed * DELTA;
 	    }
 	  });
 
@@ -7586,82 +7637,34 @@
 	      return;
 	    }
 	    if (keyboard.eventMatches(event, 'A') || keyboard.eventMatches(event, 'left')) {
-	      sprite.vx = 0;
+	      sprites[0].vx = 0;
 	    }
 	    if (keyboard.eventMatches(event, 'D') || keyboard.eventMatches(event, 'right')) {
-	      sprite.vx = 0;
+	      sprites[0].vx = 0;
 	    }
 	    if (keyboard.eventMatches(event, 'W') || keyboard.eventMatches(event, 'up')) {
-	      sprite.vy = 0;
+	      sprites[0].vy = 0;
 	    }
 	    if (keyboard.eventMatches(event, 'S') || keyboard.eventMatches(event, 'down')) {
-	      sprite.vy = 0;
+	      sprites[0].vy = 0;
 	    }
 	  });
 
-	  //Add the cat to the stage
-	  stage.addChild(sprite);
-
 	  //Start the game loop
-	  then = Date.now();
-	  startAnimating(60, 1000);
+	  animate(performance.now());
 	}
 
-	document.addEventListener("DOMContentLoaded", function (event) {
-	  //Add the canvas to the HTML document
-	  document.body.appendChild(renderer.view);
-	});
-
-	window.onresize = function (event) {
-	  renderer.resize(window.innerWidth, window.innerHeight);
-	};
-
-	function startAnimating(fps, sampleFreq) {
-	  fpsInterval = 1000 / fps;
-	  lastDrawTime = performance.now();
-	  lastSampleTime = lastDrawTime;
-	  frameCount = 0;
-
-	  animate();
-
-	  intervalID = setInterval(sampleFps, sampleFreq);
-	}
-
-	function animate(now) {
+	function animate(t) {
+	  var lastframetime = void 0;
+	  window.DELTA = lastframetime ? (t - lastframetime) / 1000.0 : 0.016;
+	  lastframetime = t;
+	  // draw
+	  sprites[0].x += sprites[0].vx;
+	  sprites[0].y += sprites[0].vy;
+	  _io2.default.emit('new position', { x: sprites[0].x, y: sprites[0].y });
+	  _generateRenderer2.default.render(stage);
 	  // request another frame
-
-	  requestID = requestAnimationFrame(animate);
-
-	  // calc elapsed time since last loop
-	  var elapsed = now - lastDrawTime;
-
-	  // if enough time has elapsed, draw the next frame
-	  if (elapsed > fpsInterval) {
-
-	    // Get ready for next frame by setting lastDrawTime=now, but...
-	    // Also, adjust for fpsInterval not being multiple of 16.67
-	    lastDrawTime = now - elapsed % fpsInterval;
-
-	    DELTA = elapsed / 1000;
-	    console.log(DELTA);
-	    sprite.x += sprite.vx;
-	    sprite.y += sprite.vy;
-	    // draw
-	    renderer.render(stage);
-
-	    frameCount++;
-	  }
-	}
-
-	function sampleFps() {
-	  // sample FPS
-	  var now = performance.now();
-	  if (frameCount > 0) {
-	    var currentFps = (frameCount / (now - lastSampleTime) * 1000).toFixed(2);
-
-	    frameCount = 0;
-	  }
-	  lastSampleTime = now;
+	  requestAnimationFrame(animate);
 	}
 
 /***/ },
@@ -7867,6 +7870,33 @@
 	//# sourceMappingURL=pixi.min.js.map
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 52 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _pixi = __webpack_require__(51);
+
+	//Create the renderer
+	var renderer = (0, _pixi.autoDetectRenderer)(window.innerWidth, window.innerHeight, {
+	  //options
+	  antialias: true,
+	  autoResize: true,
+	  resolution: 2
+	});
+
+	renderer.backgroundColor = 0x061639;
+	renderer.view.style.position = "absolute";
+	renderer.view.style.display = "block";
+	renderer.autoResize = true;
+
+	exports.default = renderer;
 
 /***/ }
 /******/ ]);
